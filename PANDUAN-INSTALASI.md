@@ -99,6 +99,20 @@ git push
 ```
 Jika tampilan lama masih muncul: Ctrl+Shift+R.
 
+## BAGIAN F — Versi 2.0: yang baru & cara memperbarui
+
+**Yang baru**
+1. **Semua jenjang SD–SMA.** Jenjang otomatis dari kolom *Tingkat* pada kelas (1–6 = SD, 7–9 = SMP, X–XII = SMA). Pilihan jawaban PG disarankan: kelas 1–3 → A–C, kelas 4–9 → A–D, kelas 10–12 → A–E (bisa diganti guru). Prompt pembaca AI menyesuaikan tulisan tangan anak SD/SMP.
+2. **Tanpa membuat soal.** Di *Ujian & Kunci Jawaban* guru cukup mengisi jumlah soal dan kunci: ketuk huruf, atau tempel cepat `ABCDABCD…` / `1.A 2.B`. Isian singkat: kunci + variasi. Uraian: jawaban acuan + skor (rubrik opsional `aspek|skor`). Sistem membuat butir soal "Soal nomor N" sendiri (topik *Kunci langsung*), sehingga cetak LJK, verifikasi, hasil, dan analisis tetap berjalan.
+3. **Salah kunci? Koreksi saja.** Setelah LJK dipindai, kunci dan skor tetap boleh diubah; nilai pilihan ganda dihitung ulang otomatis (jawaban yang sudah diverifikasi guru tidak ditimpa). Jumlah/jenis soal terkunci setelah ada LJK.
+4. **Lebih cepat.** Backend: cache berversi (satu penulisan = satu penanda versi, bukan hapus cache satu-satu), bootstrap per pengguna di-cache, klien yang datanya masih sama hanya menerima kuota+jam server, endpoint `batch` (beberapa panggilan, satu eksekusi), telemetri `ms`/`v`. Frontend: permintaan kembar digabung, pembacaan serentak dikirim sekali jalan, tampilan kerangka (skeleton) alih-alih spinner, skrip `defer`.
+
+**Cara memperbarui dari versi 1** (data tidak berubah, skema Sheets sama)
+1. Di Apps Script ganti isi `Kode` dan `Penilaian` dengan berkas baru (`appsscript.json` tidak berubah).
+2. **Deploy → Manage deployments → ikon pensil → Version: New version → Deploy.** URL `/exec` tetap sama; sesi login lama tetap berlaku.
+3. Frontend: ekstrak ZIP baru, salin isinya menimpa folder repo lama, **pertahankan `js/config.js` lama Anda**, lalu dari folder itu: `git add .` → `git commit -m "Versi 2.0"` → `git push`. Tekan Ctrl+Shift+R di peramban.
+4. Contoh kelas SD/SMP hanya ada di mode demo; di backend sungguhan tambahkan kelas sendiri lewat Master Data (pilih Tingkat 1–12).
+
 ## Troubleshooting
 | Gejala | Solusi |
 |---|---|

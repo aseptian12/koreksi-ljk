@@ -96,6 +96,12 @@
     send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
     gal: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.7"/><path d="M21 15l-5-5L5 21"/>'
   };
+
+  /* ---------- Jenjang (SD/SMP/SMA) diturunkan dari tingkat kelas ---------- */
+  const ROMAWI = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+  L.tingkatAngka = t => { t = String(t == null ? '' : t).trim().toUpperCase(); if (/^\d+$/.test(t)) return Math.min(12, Math.max(1, +t)); return ROMAWI[t] || 10; };
+  L.opsiDefault = t => { const n = L.tingkatAngka(t); return n <= 3 ? 3 : n <= 9 ? 4 : 5; };
+  L.jenjang = t => { const n = L.tingkatAngka(t); return { n, nama: n <= 6 ? 'SD' : n <= 9 ? 'SMP' : 'SMA', opsi: L.opsiDefault(t) }; };
   L.ic = (n, size) => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"' + (size ? ' style="width:' + size + 'px;height:' + size + 'px"' : '') + '>' + (P[n] || P.info) + '</svg>';
 
   /* ---------- Toast ---------- */

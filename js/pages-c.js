@@ -4,7 +4,7 @@
   const L = window.L, $ = L.$, $$ = L.$$, esc = L.esc, ic = L.ic, P = (L.page = L.page || {});
   const klon = o => JSON.parse(JSON.stringify(o));
   const uid = a => (a && a[0] ? decodeURIComponent(a[0]) : '');
-  const spin = t => '<div class="empty"><span class="spin"></span><div class="mt">' + (t || 'Memuat data…') + '</div></div>';
+  const spin = t => '<div class="skp" role="status" aria-label="' + (t || 'Memuat data') + '"><i class="sk" style="height:46px"></i><i class="sk mt" style="height:46px"></i><i class="sk mt" style="height:46px"></i><i class="sk mt" style="height:46px"></i></div>';
   const f1 = n => L.num(n, 1), f2 = n => L.num(n, 2);
   const rata = a => a.length ? a.reduce((t, x) => t + x, 0) / a.length : 0;
   const varian = a => { const m = rata(a); return a.length ? a.reduce((t, x) => t + (x - m) * (x - m), 0) / a.length : 0; };

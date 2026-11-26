@@ -14,9 +14,9 @@
   L.ls = ls;
 
   /* ---------- API ---------- */
-  L.api = async function (action, data, opt) {
+  async function apiRun(action, data, opt) {
     opt = opt || {};
-    if (L.DEMO) { await new Promise(r => setTimeout(r, opt.cepat ? 20 : 140)); return L.demo.call(action, data || {}, S.user); }
+    if (L.DEMO) { await new Promise(r => setTimeout(r, opt.cepat ? 8 : 25)); return L.demo.call(action, data || {}, S.user); }
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), opt.timeout || 330000);
     let res;
     try {
@@ -35,7 +35,33 @@
       if (err.code === 'AUTH' && action !== 'auth.masuk') { L.logout(true); }
       throw err;
     }
+    L.stat.n++; L.stat.ms += j.ms || 0; if (j.ms) L.stat.last = j.ms; L.stat.v = j.v || L.stat.v;
     return j.data;
+  }
+  /* ---------- Turbo: dedupe in-flight, epoch tulis, batcher baca ---------- */
+  L.stat = { n: 0, ms: 0, last: 0, v: '', dedupe: 0, batch: 0, digabung: 0 };
+  const BACA = /^(bootstrap|jawaban\.ujian|gambar\.ambil|ai\.uji)$/, BATCHABLE = /^jawaban\.ujian$/;
+  let epoch = 0; const inflight = {}; let antre = [], timer = null;
+  function kirimBatch() {
+    const q = antre; antre = []; timer = null; if (!q.length) return;
+    if (q.length === 1) { apiRun(q[0].a, q[0].d, q[0].o).then(q[0].ok, q[0].no); return; }
+    L.stat.batch++; L.stat.digabung += q.length;
+    apiRun('batch', { calls: q.map(x => ({ action: x.a, data: x.d })) }).then(arr => {
+      q.forEach((x, i) => { const r = arr[i]; if (r && r.success) x.ok(r.data); else { const e = new Error((r && r.message) || 'Terjadi kesalahan.'); e.code = (r && r.code) || 'ERROR'; x.no(e); } });
+    }, e => {
+      // server lama tanpa batch: kirim satu per satu
+      if (e && e.code === 'NOT_FOUND') q.forEach(x => apiRun(x.a, x.d, x.o).then(x.ok, x.no)); else q.forEach(x => x.no(e));
+    });
+  }
+  L.api = function (action, data, opt) {
+    if (!BACA.test(action)) { epoch++; return apiRun(action, data, opt); }
+    const k = epoch + '|' + action + '|' + JSON.stringify(data || {});
+    if (inflight[k]) { L.stat.dedupe++; return inflight[k]; }
+    let p;
+    if (!L.DEMO && BATCHABLE.test(action)) p = new Promise((ok, no) => { antre.push({ a: action, d: data || {}, o: opt, ok, no }); if (!timer) timer = setTimeout(kirimBatch, 12); });
+    else p = apiRun(action, data, opt);
+    inflight[k] = p; const bersih = () => { delete inflight[k]; }; p.then(bersih, bersih);
+    return p;
   };
 
   /* ---------- Sesi & bootstrap ---------- */
@@ -55,7 +81,12 @@
   L.cacheBoot = () => { if (S.user && S.d) { const c = Object.assign({}, S.d); ls.set(KEY_BOOT + S.user.email, c); } };
 
   L.bootstrap = async function (diam) {
-    const d = await L.api('bootstrap', {});
+    const ada = S.d && S.d.ver ? S.d.ver : '';
+    const d = await L.api('bootstrap', ada ? { ver: ada } : {});
+    if (d.tidakBerubah && S.d) {            // data sama persis: cukup perbarui kuota & jam server
+      S.d.kuota = d.kuota; S.d.waktuServer = d.waktuServer; S.d.ver = d.ver; L.stat.tb = (L.stat.tb || 0) + 1;
+      L.cacheBoot(); if (!diam) L.emit(); return S.d;
+    }
     S.d = d; S.user = d.user || S.user; S.jw = {};
     L.cacheBoot(); if (!diam) L.emit();
     return d;

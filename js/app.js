@@ -6,8 +6,7 @@
   const MENU = [
     { k: 'dashboard', t: 'Dashboard', i: 'chart' },
     { k: 'master', t: 'Master Data', i: 'users', h: '#/master/siswa' },
-    { k: 'bank', t: 'Bank Soal', i: 'box' },
-    { k: 'ujian', t: 'Manajemen Ujian', i: 'file' },
+    { k: 'ujian', t: 'Ujian & Kunci Jawaban', i: 'file' },
     { k: 'cetak', t: 'Cetak LJK', i: 'print' },
     { k: 'unggah', t: 'Unggah LJK', i: 'upload' },
     { k: 'verifikasi', t: 'Verifikasi Jawaban', i: 'checkc', cnt: true },
@@ -86,7 +85,7 @@
 
   /* ---------- Render ---------- */
   function setRoot(html) { const a = $('#app'); a.innerHTML = html; }
-  function loading(t) { setRoot('<div class="loadpage"><span class="spin"></span><span>' + (t || 'Memuat…') + '</span></div>'); }
+  function loading(t) { setRoot('<div class="skp" role="status" aria-label="' + esc(t || 'Memuat') + '"><i class="sk" style="width:38%;height:26px"></i><i class="sk" style="width:62%"></i><div class="grid g3 mt"><i class="sk" style="height:84px"></i><i class="sk" style="height:84px"></i><i class="sk" style="height:84px"></i></div><i class="sk mt" style="height:220px"></i></div>'); }
 
   async function route() {
     const my = ++tok;

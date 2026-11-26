@@ -13,6 +13,7 @@
     const d = L.S.d, i = d.ujian.findIndex(x => x.id === r.ujian.id);
     if (i >= 0) d.ujian[i] = r.ujian; else d.ujian.unshift(r.ujian);
     d.soalUjian = d.soalUjian.filter(s => s.ujianId !== r.ujian.id).concat(r.soalUjian);
+    if (r.bankSoal) { const pre = 'K-' + r.ujian.kode + '-'; d.bankSoal = (d.bankSoal || []).filter(b => String(b.kode).indexOf(pre) !== 0).concat(r.bankSoal); }
     L.cacheBoot(); L.emit();
   }
   const bandingTanggal = (a, b) => String(b.tanggal).localeCompare(String(a.tanggal));
@@ -69,23 +70,53 @@
       if (id && !lama) return L.kosong('clip', 'Ujian tidak ditemukan', 'Ujian mungkin sudah dihapus.', '<a class="btn" href="#/ujian">Kembali</a>');
       this.kunci = id ? hasLJK(id) : false;
       const draft = !id ? L.ls.get('ljk_draft_ujian') : null;
-      this.F = klon(lama ? Object.assign({}, lama, { soal: L.d.soalUjian(id).map(s => ({ soalId: s.soalId, bobot: s.bobot })) }) : (draft || { nama: '', jenis: 'PH', kelasId: (d.kelas[0] || {}).id || '', mapelId: (d.mapel[0] || {}).id || '', tanggal: hariIni(), durasi: 90, instruksi: 'Gunakan pensil 2B untuk menghitamkan bulatan. Jawab isian dan uraian dengan pena hitam secara ringkas.', bobotPG: set.bobotPG != null ? set.bobotPG : 40, bobotIsian: set.bobotIsian != null ? set.bobotIsian : 30, bobotUraian: set.bobotUraian != null ? set.bobotUraian : 30, soal: [] }));
-      return '<a class="btn sm ghost mb" href="#/ujian">' + ic('arl', 15) + ' Kembali ke Manajemen Ujian</a>' + L.pageHead('Modul W-07', (id ? 'Ubah' : 'Buat') + ' Konfigurasi Ujian', 'Langkah 1 dari 2: Identitas ujian, bobot penilaian, dan pemilihan butir soal.', '<span class="badge mono">' + (lama ? esc(lama.kode) : 'KODE OTOMATIS') + '</span><span class="small faint" id="autosave"></span>') +
-        '<div class="stepper mb"><a class="on"><span class="n">1</span>Informasi &amp; Paket Soal</a><a><span class="n">2</span>Pratinjau &amp; Cetak LJK</a></div><div class="col" id="uf"></div><div class="stickybar"><span class="small muted" id="ufmsg"></span><div class="row wrap"><a class="btn" href="#/ujian">Batal</a><button class="btn" data-a="draf">' + ic('save') + ' Simpan Draf</button><button class="btn pri lg" data-a="lanjut">Simpan &amp; Lanjut ke Cetak ' + ic('arr') + '</button></div></div>';
+      let F;
+      if (lama) {
+        F = klon(lama); const su = L.d.soalUjian(id).slice().sort((x, y) => x.nomor - y.nomor);
+        F.kunci = su.map(x => { const b = L.d.bank(x.soalId) || {}; return { jenis: b.jenis || 'PG', kunci: b.kunci || '', variasi: (b.variasi || []).join(', '), jawabanIdeal: b.jawabanIdeal || '', rub: (b.rubrik || []).length > 1 ? b.rubrik.map(r => r.aspek + '|' + r.bobot).join('\n') : '', bobot: x.bobot }; });
+        const pg = su.map(x => L.d.bank(x.soalId)).filter(b => b && b.jenis === 'PG'); F.opsiJumlah = pg.length ? Math.max.apply(null, pg.map(b => (b.opsi || []).length)) : L.opsiDefault((d.kelas.find(k => k.id === F.kelasId) || {}).tingkat); F._bm = true; F._om = true;
+      } else if (draft && draft.kunci) F = draft;
+      else {
+        const k0 = d.kelas[0] || {};
+        F = { nama: '', jenis: 'PH', kelasId: k0.id || '', mapelId: (d.mapel[0] || {}).id || '', tanggal: hariIni(), durasi: 90, instruksi: 'Gunakan pensil 2B untuk menghitamkan bulatan. Jawab isian dan uraian dengan pena hitam secara ringkas.', bobotPG: 100, bobotIsian: 0, bobotUraian: 0, opsiJumlah: L.opsiDefault(k0.tingkat), kunci: [] };
+        for (let i = 0; i < 10; i++) F.kunci.push({ jenis: 'PG', kunci: '', variasi: '', jawabanIdeal: '', rub: '', bobot: 1 });
+      }
+      this.F = F;
+      return '<a class="btn sm ghost mb" href="#/ujian">' + ic('arl', 15) + ' Kembali ke Manajemen Ujian</a>' + L.pageHead('Modul W-07', (id ? 'Ubah' : 'Buat') + ' Ujian & Kunci Jawaban', 'Langkah 1 dari 2: Identitas ujian, lalu masukkan kunci jawaban. Tidak perlu menulis soal.', '<span class="badge mono">' + (lama ? esc(lama.kode) : 'KODE OTOMATIS') + '</span><span class="small faint" id="autosave"></span>') +
+        '<div class="stepper mb"><a class="on"><span class="n">1</span>Informasi &amp; Kunci Jawaban</a><a><span class="n">2</span>Pratinjau &amp; Cetak LJK</a></div><div class="col" id="uf"></div><div class="stickybar"><span class="small muted" id="ufmsg"></span><div class="row wrap"><a class="btn" href="#/ujian">Batal</a><button class="btn" data-a="draf">' + ic('save') + ' Simpan</button><button class="btn pri lg" data-a="lanjut">Simpan &amp; Lanjut ke Cetak ' + ic('arr') + '</button></div></div>';
     },
     mount(root) {
       const self = this, F = this.F, d = L.S.d, kunci = this.kunci, set = L.d.set();
-      let tf = '', tq = '', dragI = -1;
       const simpanDraf = L.debounce(() => { if (!self.id) { L.ls.set('ljk_draft_ujian', F); const e = $('#autosave'); if (e) e.textContent = 'Draf tersimpan otomatis ' + L.jam(new Date()); } }, 600);
       const total = () => (+F.bobotPG || 0) + (+F.bobotIsian || 0) + (+F.bobotUraian || 0);
-      function draw() {
-        $('#uf').innerHTML = '<div class="card"><h2>' + ic('book', 18) + ' Bagian 1 · Informasi umum ujian</h2><div class="grid g2 mt"><div><label class="f">Nama / judul resmi ujian <span class="req">*</span></label><input class="in" data-f="nama" value="' + esc(F.nama) + '" placeholder="mis. Penilaian Tengah Semester Biologi Sel X-A"></div><div><label class="f">Alokasi waktu (menit)</label><input class="in mono" type="number" min="5" step="5" data-f="durasi" value="' + esc(F.durasi) + '"></div></div><div class="grid g3 mt"><div><label class="f">Jenis evaluasi</label><select class="in" data-f="jenis">' + JENIS_UJIAN.map(j => '<option value="' + j[0] + '"' + (F.jenis === j[0] ? ' selected' : '') + '>' + j[1] + '</option>').join('') + '</select></div><div><label class="f">Target rombel / kelas <span class="req">*</span></label><select class="in" data-f="kelasId">' + d.kelas.map(k => '<option value="' + esc(k.id) + '"' + (F.kelasId === k.id ? ' selected' : '') + '>' + esc(k.nama) + ' (' + L.d.siswaKelas(k.id).length + ' siswa)</option>').join('') + '</select></div><div><label class="f">Mata pelajaran <span class="req">*</span></label><select class="in" data-f="mapelId">' + d.mapel.map(m => '<option value="' + esc(m.id) + '"' + (F.mapelId === m.id ? ' selected' : '') + '>' + esc(m.nama) + ' (' + esc(m.kode) + ')</option>').join('') + '</select></div></div><div class="grid g2 mt"><div><label class="f">Tanggal pelaksanaan</label><input class="in" type="date" data-f="tanggal" value="' + esc(F.tanggal) + '"></div><div><label class="f">Catatan instruksi (muncul di header LJK)</label><textarea class="in" data-f="instruksi" rows="2">' + esc(F.instruksi) + '</textarea></div></div></div>' +
-          '<div class="card"><div class="row between wrap"><h2>' + ic('target', 18) + ' Bagian 2 · Pembobotan nilai (agregasi 100%)</h2><span id="btot"></span></div><p class="small muted mt">Kontribusi tiap jenis soal terhadap nilai akhir skala 0–100. Jenis yang tidak memiliki soal tidak ikut dihitung dan bobotnya dibagi ulang otomatis.</p><div class="grid g3 mt" id="bgrid"></div><div class="mt"><div class="row between tiny muted mb" style="margin-bottom:6px"><span>Distribusi rasio penilaian</span><span id="brasio"></span></div><div class="wbar" id="bbar"></div></div><div class="mt"><button class="btn sm" data-a="bdef">' + ic('refresh', 14) + ' Pakai bobot default sekolah</button></div></div>' +
-          '<div class="card pad0"><div class="card-h" style="padding:16px 16px 0"><div><h2>' + ic('list', 18) + ' Bagian 3 · Daftar soal ujian terpilih</h2><div class="small muted" id="ssum"></div></div><div class="row wrap"><a class="btn sm" href="#/bank/form">' + ic('plus', 15) + ' Tulis soal baru</a><button class="btn sm pri" data-a="ambil"' + (kunci ? ' disabled' : '') + '>' + ic('box', 15) + ' Ambil dari Bank Soal</button></div></div>' + (kunci ? '<div class="note warn" style="margin:0 16px 12px">' + ic('warn') + '<div>Daftar soal dikunci karena LJK ujian ini sudah dipindai. Hapus data LJK terlebih dahulu bila ingin mengubah paket soal. Bobot per soal tetap dapat diubah.</div></div>' : '') + '<div class="fbar" style="padding:0 16px 12px"><div class="seg" id="stf"></div><div class="search grow" style="max-width:none"><input class="in" id="stq" placeholder="Cari dalam soal terpilih…" style="padding-left:40px" aria-label="Cari soal terpilih">' + ic('search') + '</div></div><div id="slist"></div></div>';
-        drawBobot(); drawSoal();
+      const kelas = () => d.kelas.find(k => k.id === F.kelasId) || {};
+      const huruf = () => 'ABCDE'.slice(0, F.opsiJumlah);
+      const cnt = () => { const c = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.kunci.forEach(k => { c[k.jenis]++; }); return c; };
+      const BD = { PG: 1, ISIAN: 2, URAIAN: 10 };
+      const urut = () => { const o = { PG: 0, ISIAN: 1, URAIAN: 2 }; F.kunci = F.kunci.map((k, i) => ({ k, i })).sort((x, y) => o[x.k.jenis] - o[y.k.jenis] || x.i - y.i).map(x => x.k); };
+      function bobotOtomatis() {
+        if (F._bm) return; const c = cnt(), ada = ['PG', 'ISIAN', 'URAIAN'].filter(j => c[j] > 0).join('+');
+        const m = { 'PG': [100, 0, 0], 'ISIAN': [0, 100, 0], 'URAIAN': [0, 0, 100], 'PG+ISIAN': [60, 40, 0], 'PG+URAIAN': [60, 0, 40], 'ISIAN+URAIAN': [0, 50, 50], 'PG+ISIAN+URAIAN': [40, 30, 30] }[ada];
+        if (m) { F.bobotPG = m[0]; F.bobotIsian = m[1]; F.bobotUraian = m[2]; }
       }
+      function atur(j, n) {
+        n = Math.max(0, Math.min(200, Math.floor(+n) || 0)); const ada = F.kunci.filter(k => k.jenis === j);
+        if (n < ada.length) { let hapus = ada.length - n; for (let i = F.kunci.length - 1; i >= 0 && hapus > 0; i--) if (F.kunci[i].jenis === j) { F.kunci.splice(i, 1); hapus--; } }
+        else for (let i = ada.length; i < n; i++) F.kunci.push({ jenis: j, kunci: '', variasi: '', jawabanIdeal: '', rub: '', bobot: BD[j] });
+        urut(); bobotOtomatis();
+      }
+      function draw() {
+        $('#uf').innerHTML = '<div class="card"><h2>' + ic('book', 18) + ' Bagian 1 · Informasi umum ujian</h2><div class="grid g2 mt"><div><label class="f">Nama / judul resmi ujian <span class="req">*</span></label><input class="in" data-f="nama" value="' + esc(F.nama) + '" placeholder="mis. Penilaian Tengah Semester Biologi Sel X-A"></div><div><label class="f">Alokasi waktu (menit)</label><input class="in mono" type="number" min="5" step="5" data-f="durasi" value="' + esc(F.durasi) + '"></div></div><div class="grid g3 mt"><div><label class="f">Jenis evaluasi</label><select class="in" data-f="jenis">' + JENIS_UJIAN.map(j => '<option value="' + j[0] + '"' + (F.jenis === j[0] ? ' selected' : '') + '>' + j[1] + '</option>').join('') + '</select></div><div><label class="f">Target rombel / kelas <span class="req">*</span></label><select class="in" data-f="kelasId">' + d.kelas.map(k => '<option value="' + esc(k.id) + '"' + (F.kelasId === k.id ? ' selected' : '') + '>' + esc(k.nama) + ' · ' + L.jenjang(k.tingkat).nama + ' (' + L.d.siswaKelas(k.id).length + ' siswa)</option>').join('') + '</select></div><div><label class="f">Mata pelajaran <span class="req">*</span></label><select class="in" data-f="mapelId">' + d.mapel.map(m => '<option value="' + esc(m.id) + '"' + (F.mapelId === m.id ? ' selected' : '') + '>' + esc(m.nama) + ' (' + esc(m.kode) + ')</option>').join('') + '</select></div></div><div class="grid g2 mt"><div><label class="f">Tanggal pelaksanaan</label><input class="in" type="date" data-f="tanggal" value="' + esc(F.tanggal) + '"></div><div><label class="f">Catatan instruksi (muncul di header LJK)</label><textarea class="in" data-f="instruksi" rows="2">' + esc(F.instruksi) + '</textarea></div></div></div>' +
+          '<div class="card"><div class="row between wrap"><h2>' + ic('target', 18) + ' Bagian 2 · Pembobotan nilai (agregasi 100%)</h2><span id="btot"></span></div><p class="small muted mt">Kontribusi tiap jenis soal terhadap nilai akhir skala 0–100. Jenis yang tidak memiliki soal tidak ikut dihitung dan bobotnya dibagi ulang otomatis.</p><div class="grid g3 mt" id="bgrid"></div><div class="mt"><div class="row between tiny muted mb" style="margin-bottom:6px"><span>Distribusi rasio penilaian</span><span id="brasio"></span></div><div class="wbar" id="bbar"></div></div><div class="mt"><button class="btn sm" data-a="bdef">' + ic('refresh', 14) + ' Pakai bobot default sekolah</button></div></div>' +
+          '<div class="card"><div class="row between wrap"><h2>' + ic('key', 18) + ' Bagian 3 · Kunci jawaban</h2><span class="badge" id="kjen"></span></div><p class="small muted mt">Tidak perlu membuat soal. Masukkan jumlah soal dan kunci jawabannya saja; sistem langsung mengoreksi lembar jawaban siswa berdasarkan kunci ini.</p>' +
+          (kunci ? '<div class="note warn mt">' + ic('warn') + '<div>LJK ujian ini sudah dipindai, jadi jumlah dan jenis soal dikunci. Kunci dan skor masih boleh dikoreksi — nilai siswa dihitung ulang otomatis (pilihan ganda).</div></div>' : '') +
+          '<div class="grid g3 mt"><div><label class="f">Jumlah Pilihan Ganda</label><input class="in mono" type="number" min="0" max="200" data-n="PG"' + (kunci ? ' disabled' : '') + '></div><div><label class="f">Jumlah Isian Singkat</label><input class="in mono" type="number" min="0" max="200" data-n="ISIAN"' + (kunci ? ' disabled' : '') + '></div><div><label class="f">Jumlah Uraian</label><input class="in mono" type="number" min="0" max="200" data-n="URAIAN"' + (kunci ? ' disabled' : '') + '></div></div>' +
+          '<div class="row wrap mt"><span class="small muted">Banyak pilihan jawaban (PG):</span><div class="seg" id="ksg"></div><span class="small faint" id="kojh"></span></div><div id="kb" class="mt"></div></div>';
+        drawBobot(); drawKunci(); sinkronCount();
+      }
+      function sinkronCount() { const c = cnt(); ['PG', 'ISIAN', 'URAIAN'].forEach(j => { const e = $('input[data-n="' + j + '"]'); if (e && document.activeElement !== e) e.value = c[j]; }); }
       function drawBobot() {
-        const j = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.soal.forEach(s => { const b = L.d.bank(s.soalId); if (b) j[b.jenis]++; });
+        const j = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.kunci.forEach(k => { j[k.jenis]++; });
         const tot = total(), ok = Math.round(tot) === 100;
         const defs = [['bobotPG', 'PG', 'Pilihan Ganda', 'Dibaca dari arsiran bulatan A–E; dinilai lokal tanpa AI.', 'pri'], ['bobotIsian', 'ISIAN', 'Isian Singkat', 'Pencocokan teks, variasi jawaban, kemiripan, lalu AI bila ragu.', 'vio'], ['bobotUraian', 'URAIAN', 'Uraian / Esai', 'Dinilai AI per aspek rubrik, lengkap dengan alasan.', 'warn']];
         $('#bgrid').innerHTML = defs.map(x => '<div class="card flat" style="background:var(--card2)"><div class="row between"><span class="badge ' + x[4] + '">' + x[1] + '</span><b>' + x[2] + '</b></div><div class="row mt"><input class="in mono" type="number" min="0" max="100" step="1" data-b="' + x[0] + '" value="' + esc(F[x[0]]) + '" style="max-width:110px" aria-label="Bobot ' + x[2] + '"><b>%</b></div><div class="tiny muted mt">' + x[3] + '</div><div class="tiny mt ' + (j[x[1]] ? 'muted' : 'errtx') + '" style="margin-top:6px">' + j[x[1]] + ' butir soal dipilih' + (!j[x[1]] && +F[x[0]] > 0 ? ' — bobot tidak terpakai' : '') + '</div></div>').join('');
@@ -93,64 +124,101 @@
         $('#brasio').textContent = F.bobotPG + '% PG : ' + F.bobotIsian + '% IS : ' + F.bobotUraian + '% UR';
         $('#bbar').innerHTML = '<i style="width:' + Math.min(100, +F.bobotPG || 0) + '%;background:var(--pri)"></i><i style="width:' + Math.min(100, +F.bobotIsian || 0) + '%;background:var(--vio)"></i><i style="width:' + Math.min(100, +F.bobotUraian || 0) + '%;background:var(--warn)"></i>';
       }
-      function drawSoal() {
-        let poin = 0, n = 0; F.soal.forEach(s => { poin += +s.bobot || 0; n++; });
-        const c = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.soal.forEach(s => { const b = L.d.bank(s.soalId); if (b) c[b.jenis]++; });
-        $('#ssum').textContent = n + ' soal terdaftar • Durasi ' + (F.durasi || 0) + ' menit • Skor kasar ' + L.num(poin, 1) + ' poin';
-        $('#stf').innerHTML = [['', 'Semua (' + n + ')'], ['PG', 'PG (' + c.PG + ')'], ['ISIAN', 'Isian (' + c.ISIAN + ')'], ['URAIAN', 'Uraian (' + c.URAIAN + ')']].map(x => '<button data-tf="' + x[0] + '" class="' + (tf === x[0] ? 'on' : '') + '">' + x[1] + '</button>').join('');
-        const q = tq.toLowerCase(), rows = F.soal.map((s, i) => ({ s, i, b: L.d.bank(s.soalId) })).filter(r => r.b && (!tf || r.b.jenis === tf) && (!q || (L.polos(r.b.teks) + ' ' + r.b.kode + ' ' + r.b.topik).toLowerCase().indexOf(q) >= 0));
-        $('#slist').innerHTML = F.soal.length ? '<div class="tw"><table class="t"><thead><tr><th style="width:36px"></th><th style="width:44px">No</th><th>Cuplikan butir soal</th><th>Tipe</th><th style="width:110px">Bobot butir</th><th>Kunci / rubrik</th><th class="right">Aksi</th></tr></thead><tbody>' + rows.map(r => '<tr data-i="' + r.i + '" draggable="' + (kunci ? 'false' : 'true') + '"><td class="faint" style="cursor:' + (kunci ? 'default' : 'grab') + '" title="Seret untuk mengurutkan">' + ic('grip', 16) + '</td><td class="b mono">' + (r.i + 1) + '</td><td style="min-width:220px;max-width:420px"><div class="b">' + esc(L.potong(L.polos(r.b.teks), 80)) + '</div><div class="tiny faint mono">ID: ' + esc(r.b.kode) + (r.b.topik ? ' • Topik: ' + esc(r.b.topik) : '') + (r.b.lampiranId ? ' • [Ada gambar]' : '') + '</div></td><td><span class="badge ' + L.JENIS[r.b.jenis][2] + '">' + L.JENIS[r.b.jenis][1] + '</span></td><td><input class="in mono" type="number" min="0.5" step="0.5" data-sb="' + r.i + '" value="' + esc(r.s.bobot) + '" style="min-height:36px;padding:4px 8px" aria-label="Bobot soal ' + (r.i + 1) + '"></td><td>' + ketKunci(r.b) + '</td><td class="right nowrap">' + (kunci ? '' : '<button class="ibtn" data-up="' + r.i + '" aria-label="Naikkan" ' + (r.i === 0 ? 'disabled' : '') + '>' + ic('chevu', 15) + '</button> <button class="ibtn" data-dn="' + r.i + '" aria-label="Turunkan" ' + (r.i === F.soal.length - 1 ? 'disabled' : '') + '>' + ic('chevd', 15) + '</button> <button class="ibtn dng" data-rm="' + r.i + '" aria-label="Keluarkan dari ujian">' + ic('trash', 15) + '</button>') + '</td></tr>').join('') + '</tbody></table></div>' + (rows.length ? '' : '<div class="empty">Tidak ada soal yang cocok dengan filter.</div>') : L.kosong('box', 'Belum ada soal di ujian ini', 'Ambil soal dari bank soal atau tulis soal baru.', kunci ? '' : '<button class="btn pri" data-a="ambil">' + ic('box', 15) + ' Pilih soal dari Bank Soal</button>');
+      function drawKunci() {
+        const pv = ($('#kpaste') || {}).value || '';
+        const c = cnt(), jn = L.jenjang(kelas().tingkat), H = huruf().split('');
+        $('#kjen').innerHTML = esc(jn.nama) + ' · Kelas ' + esc(kelas().tingkat || '-');
+        $('#ksg').innerHTML = [3, 4, 5].map(n => '<button type="button" data-oj="' + n + '" class="' + (F.opsiJumlah === n ? 'on' : '') + '"' + (kunci ? ' disabled' : '') + '>' + 'ABCDE'.slice(0, n).split('').join('') + '</button>').join('');
+        $('#kojh').textContent = 'Disarankan ' + jn.opsi + ' pilihan untuk ' + jn.nama;
+        let poin = 0; F.kunci.forEach(k => { poin += +k.bobot || 0; });
+        const isiPG = F.kunci.filter(k => k.jenis === 'PG' && k.kunci).length;
+        let h = '<div class="small muted">' + F.kunci.length + ' soal · skor kasar ' + L.num(poin, 1) + ' poin</div>';
+        if (!F.kunci.length) h = '<div class="note">' + ic('info') + '<div>Isi jumlah soal di atas untuk mulai memasukkan kunci jawaban.</div></div>';
+        if (c.PG) {
+          h += '<h3 class="mt">Pilihan Ganda <span class="badge ' + (isiPG === c.PG ? 'ok' : 'warn') + '">' + isiPG + '/' + c.PG + ' terisi</span></h3>' +
+            '<div class="row wrap" style="margin:8px 0"><div class="grow" style="min-width:220px"><input class="in mono" id="kpaste" placeholder="Tempel cepat: ABCDABCD… atau 1.A 2.B 3.C"></div><button type="button" class="btn sm" data-a="paste">' + ic('check', 14) + ' Terapkan</button><label class="small muted row" style="gap:6px">Skor per soal <input class="in mono" type="number" min="0" step="0.5" data-bd="PG" value="' + esc((F.kunci.find(k => k.jenis === 'PG') || {}).bobot) + '" style="width:80px"></label></div>' +
+            '<div class="kgrid">' + F.kunci.map((k, i) => k.jenis !== 'PG' ? '' : '<div class="kr"><b class="mono">' + ('0' + (i + 1)).slice(-2) + '</b><div class="kcs">' + H.map(x => '<button type="button" class="kc' + (k.kunci === x ? ' on' : '') + '" data-pg="' + i + '" data-k="' + x + '" aria-label="Soal ' + (i + 1) + ' kunci ' + x + '">' + x + '</button>').join('') + '</div></div>').join('') + '</div>';
+        }
+        if (c.ISIAN) {
+          h += '<h3 class="mt">Isian Singkat</h3><div class="col" style="gap:10px;margin-top:8px">' + F.kunci.map((k, i) => k.jenis !== 'ISIAN' ? '' : '<div class="card flat" style="background:var(--card2)"><div class="grid g3"><div><label class="f">No. ' + (i + 1) + ' · Kunci <span class="req">*</span></label><input class="in" data-ki="' + i + '" data-kf="kunci" value="' + esc(k.kunci) + '" placeholder="mis. gotong royong"></div><div><label class="f">Variasi jawaban benar (pisah koma)</label><input class="in" data-ki="' + i + '" data-kf="variasi" value="' + esc(k.variasi) + '" placeholder="mis. gotong-royong, bergotong royong"></div><div><label class="f">Skor</label><input class="in mono" type="number" min="0" step="0.5" data-ki="' + i + '" data-kf="bobot" value="' + esc(k.bobot) + '"></div></div></div>').join('') + '</div>';
+        }
+        if (c.URAIAN) {
+          h += '<h3 class="mt">Uraian</h3><div class="col" style="gap:10px;margin-top:8px">' + F.kunci.map((k, i) => k.jenis !== 'URAIAN' ? '' : '<div class="card flat" style="background:var(--card2)"><label class="f">No. ' + (i + 1) + ' · Jawaban acuan / kunci <span class="req">*</span></label><textarea class="in" rows="3" data-ki="' + i + '" data-kf="jawabanIdeal" placeholder="Tulis jawaban ideal singkat. AI menilai kemiripan makna dengan acuan ini.">' + esc(k.jawabanIdeal) + '</textarea><div class="grid g2 mt"><div><label class="f">Skor maksimal</label><input class="in mono" type="number" min="0" step="0.5" data-ki="' + i + '" data-kf="bobot" value="' + esc(k.bobot) + '"></div><div><label class="f">Rubrik (opsional, satu baris: aspek|skor)</label><textarea class="in" rows="2" data-ki="' + i + '" data-kf="rub" placeholder="Konsep benar|6&#10;Contoh tepat|4">' + esc(k.rub) + '</textarea></div></div></div>').join('') + '</div>';
+        }
+        $('#kb').innerHTML = h; if (pv && $('#kpaste')) $('#kpaste').value = pv;
       }
       draw();
       root.oninput = e => {
         const t = e.target;
-        if (t.dataset.f) { F[t.dataset.f] = t.value; if (t.dataset.f === 'durasi') drawSoal(); simpanDraf(); }
-        else if (t.dataset.b) { F[t.dataset.b] = t.value === '' ? 0 : Number(t.value); drawBobotKeepFocus(t); simpanDraf(); }
-        else if (t.dataset.sb != null && t.dataset.sb !== '') { F.soal[+t.dataset.sb].bobot = Number(t.value) || 0; simpanDraf(); }
-        else if (t.id === 'stq') { tq = t.value; drawSoal(); const e2 = $('#stq'); if (e2) { e2.focus(); } }
+        if (t.dataset.f) { F[t.dataset.f] = t.value; simpanDraf(); }
+        else if (t.dataset.b) { F._bm = true; F[t.dataset.b] = t.value === '' ? 0 : Number(t.value); drawBobotKeepFocus(t); simpanDraf(); }
+        else if (t.dataset.ki != null && t.dataset.ki !== '') { const k = F.kunci[+t.dataset.ki], f = t.dataset.kf; k[f] = f === 'bobot' ? (Number(t.value) || 0) : t.value; simpanDraf(); }
+        else if (t.dataset.bd) { const v = Number(t.value) || 0; F.kunci.forEach(k => { if (k.jenis === t.dataset.bd) k.bobot = v; }); simpanDraf(); }
       };
-      function drawBobotKeepFocus() { const j = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.soal.forEach(s => { const b = L.d.bank(s.soalId); if (b) j[b.jenis]++; }); const tot = total(), ok = Math.round(tot) === 100; $('#btot').innerHTML = '<span class="badge ' + (ok ? 'ok' : 'err') + '">' + (ok ? ic('check', 13) + ' TOTAL: 100% (VALID)' : ic('warn', 13) + ' TOTAL: ' + L.num(tot, 1) + '% — harus 100%') + '</span>'; $('#brasio').textContent = F.bobotPG + '% PG : ' + F.bobotIsian + '% IS : ' + F.bobotUraian + '% UR'; $('#bbar').innerHTML = '<i style="width:' + Math.min(100, +F.bobotPG || 0) + '%;background:var(--pri)"></i><i style="width:' + Math.min(100, +F.bobotIsian || 0) + '%;background:var(--vio)"></i><i style="width:' + Math.min(100, +F.bobotUraian || 0) + '%;background:var(--warn)"></i>'; }
-      root.onchange = e => { const t = e.target; if (t.dataset.f && t.tagName === 'SELECT') { F[t.dataset.f] = t.value; simpanDraf(); } };
-      /* seret & lepas */
-      root.addEventListener('dragstart', e => { const tr = e.target.closest && e.target.closest('tr[data-i]'); if (!tr || kunci) return; dragI = +tr.dataset.i; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(dragI)); } catch (x) { } tr.style.opacity = .5; });
-      root.addEventListener('dragend', e => { const tr = e.target.closest && e.target.closest('tr[data-i]'); if (tr) tr.style.opacity = ''; dragI = -1; });
-      root.addEventListener('dragover', e => { if (dragI >= 0 && e.target.closest('tr[data-i]')) e.preventDefault(); });
-      root.addEventListener('drop', e => { const tr = e.target.closest('tr[data-i]'); if (!tr || dragI < 0) return; e.preventDefault(); const to = +tr.dataset.i; if (to !== dragI) { const [x] = F.soal.splice(dragI, 1); F.soal.splice(to, 0, x); drawSoal(); simpanDraf(); } dragI = -1; });
+      function drawBobotKeepFocus() { const j = { PG: 0, ISIAN: 0, URAIAN: 0 }; F.kunci.forEach(k => { j[k.jenis]++; }); const tot = total(), ok = Math.round(tot) === 100; $('#btot').innerHTML = '<span class="badge ' + (ok ? 'ok' : 'err') + '">' + (ok ? ic('check', 13) + ' TOTAL: 100% (VALID)' : ic('warn', 13) + ' TOTAL: ' + L.num(tot, 1) + '% — harus 100%') + '</span>'; $('#brasio').textContent = F.bobotPG + '% PG : ' + F.bobotIsian + '% IS : ' + F.bobotUraian + '% UR'; $('#bbar').innerHTML = '<i style="width:' + Math.min(100, +F.bobotPG || 0) + '%;background:var(--pri)"></i><i style="width:' + Math.min(100, +F.bobotIsian || 0) + '%;background:var(--vio)"></i><i style="width:' + Math.min(100, +F.bobotUraian || 0) + '%;background:var(--warn)"></i>'; }
+      root.onchange = e => {
+        const t = e.target;
+        if (t.dataset.f && t.tagName === 'SELECT') {
+          F[t.dataset.f] = t.value;
+          if (t.dataset.f === 'kelasId' && !F._om && !kunci) { F.opsiJumlah = L.opsiDefault(kelas().tingkat); }
+          if (t.dataset.f === 'kelasId') { drawKunci(); } simpanDraf();
+        } else if (t.dataset.n) { if (cnt()[t.dataset.n] === Math.max(0, Math.min(200, Math.floor(+t.value) || 0))) return; atur(t.dataset.n, t.value); drawBobot(); drawKunci(); sinkronCount(); simpanDraf(); }
+      };
       root.onclick = async e => {
         const t = e.target.closest('button'); if (!t) return;
-        if (t.dataset.tf != null && t.closest('#stf')) { tf = t.dataset.tf; drawSoal(); return; }
-        if (t.dataset.up != null) { const i = +t.dataset.up; if (i > 0) { const x = F.soal[i]; F.soal[i] = F.soal[i - 1]; F.soal[i - 1] = x; drawSoal(); simpanDraf(); } return; }
-        if (t.dataset.dn != null) { const i = +t.dataset.dn; if (i < F.soal.length - 1) { const x = F.soal[i]; F.soal[i] = F.soal[i + 1]; F.soal[i + 1] = x; drawSoal(); simpanDraf(); } return; }
-        if (t.dataset.rm != null) { F.soal.splice(+t.dataset.rm, 1); drawSoal(); drawBobot(); simpanDraf(); return; }
-        if (t.dataset.a === 'bdef') { F.bobotPG = set.bobotPG != null ? set.bobotPG : 40; F.bobotIsian = set.bobotIsian != null ? set.bobotIsian : 30; F.bobotUraian = set.bobotUraian != null ? set.bobotUraian : 30; drawBobot(); simpanDraf(); return; }
-        if (t.dataset.a === 'ambil') return pilihBank();
+        if (t.dataset.pg != null) { const k = F.kunci[+t.dataset.pg]; k.kunci = k.kunci === t.dataset.k ? '' : t.dataset.k; t.parentNode.querySelectorAll('.kc').forEach(b => b.classList.toggle('on', b.dataset.k === k.kunci)); const c = cnt(), n = F.kunci.filter(x => x.jenis === 'PG' && x.kunci).length, bd = $('#kb h3 .badge'); if (bd) { bd.textContent = n + '/' + c.PG + ' terisi'; bd.className = 'badge ' + (n === c.PG ? 'ok' : 'warn'); } simpanDraf(); return; }
+        if (t.dataset.oj != null) { if (kunci) return; F.opsiJumlah = +t.dataset.oj; F._om = true; const H = huruf(); F.kunci.forEach(k => { if (k.jenis === 'PG' && H.indexOf(k.kunci) < 0) k.kunci = ''; }); drawKunci(); simpanDraf(); return; }
+        if (t.dataset.a === 'paste') return tempel();
+        if (t.dataset.a === 'bdef') { F._bm = true; F.bobotPG = set.bobotPG != null ? set.bobotPG : 40; F.bobotIsian = set.bobotIsian != null ? set.bobotIsian : 30; F.bobotUraian = set.bobotUraian != null ? set.bobotUraian : 30; drawBobot(); simpanDraf(); return; }
         if (t.dataset.a === 'draf' || t.dataset.a === 'lanjut') return simpan(t, t.dataset.a === 'lanjut');
       };
+      function tempel() {
+        const txt = String(($('#kpaste') || {}).value || '').toUpperCase(), H = huruf(), pgIdx = []; F.kunci.forEach((k, i) => { if (k.jenis === 'PG') pgIdx.push(i); });
+        let peta = [], m, re = /(\d+)\s*[.):\-=]?\s*([A-E])/g, bernomor = /\d/.test(txt);
+        if (bernomor) { while ((m = re.exec(txt))) peta[+m[1] - 1] = m[2]; }
+        else peta = txt.replace(/[^A-E]/g, '').split('');
+        const n = peta.length; if (!n) return L.toast('Tidak ada huruf kunci yang terbaca. Contoh: ABCDABCD atau 1.A 2.B', 'warn');
+        if (n > pgIdx.length && !kunci) { atur('PG', n); pgIdx.length = 0; F.kunci.forEach((k, i) => { if (k.jenis === 'PG') pgIdx.push(i); }); }
+        let ok = 0, luar = 0; peta.forEach((h, j) => { if (!h || j >= pgIdx.length) return; if (H.indexOf(h) < 0) { luar++; return; } F.kunci[pgIdx[j]].kunci = h; ok++; });
+        drawBobot(); drawKunci(); sinkronCount(); simpanDraf();
+        L.toast(ok + ' kunci diterapkan' + (luar ? ', ' + luar + ' huruf di luar pilihan ' + H.join('/') + ' diabaikan' : '') + '.', luar ? 'warn' : undefined);
+      }
+      function cek() {
+        if (!String(F.nama).trim()) return 'Nama ujian wajib diisi.';
+        if (!F.kelasId || !F.mapelId) return 'Pilih kelas dan mata pelajaran.';
+        if (!F.kunci.length) return 'Isi jumlah soal terlebih dahulu.';
+        if (Math.round(total()) !== 100) return 'Total pembobotan harus tepat 100% (sekarang ' + L.num(total(), 1) + '%).';
+        const c = cnt(), b = { PG: +F.bobotPG, ISIAN: +F.bobotIsian, URAIAN: +F.bobotUraian };
+        for (let i = 0; i < F.kunci.length; i++) {
+          const k = F.kunci[i], no = i + 1;
+          if (k.jenis === 'PG' && !k.kunci) return 'Kunci pilihan ganda nomor ' + no + ' belum dipilih.';
+          if (k.jenis === 'ISIAN' && !String(k.kunci).trim()) return 'Kunci isian nomor ' + no + ' belum diisi.';
+          if (k.jenis === 'URAIAN' && !String(k.jawabanIdeal).trim()) return 'Jawaban acuan uraian nomor ' + no + ' belum diisi.';
+          if (!(+k.bobot > 0) && !(k.jenis === 'URAIAN' && String(k.rub).trim())) return 'Skor soal nomor ' + no + ' harus lebih dari 0.';
+        }
+        for (const j of ['PG', 'ISIAN', 'URAIAN']) if (c[j] === 0 && b[j] > 0) return 'Bobot ' + j + ' ' + b[j] + '% tetapi tidak ada soal ' + j + '. Setel bobotnya ke 0 atau tambah soal.';
+        return '';
+      }
+      function muatan() {
+        return F.kunci.map(k => {
+          const o = { jenis: k.jenis, bobot: +k.bobot || 0 };
+          if (k.jenis === 'PG') o.kunci = k.kunci;
+          else if (k.jenis === 'ISIAN') { o.kunci = String(k.kunci).trim(); o.variasi = String(k.variasi || '').split(',').map(x => x.trim()).filter(Boolean); }
+          else { o.jawabanIdeal = String(k.jawabanIdeal).trim(); const r = String(k.rub || '').split('\n').map(x => x.split('|')).filter(x => x[0].trim() && +x[1] > 0).map(x => ({ aspek: x[0].trim(), bobot: +x[1] })); if (r.length) { o.rubrik = r; o.bobot = r.reduce((t, a) => t + a.bobot, 0); } }
+          return o;
+        });
+      }
       async function simpan(btn, lanjut) {
-        if (!String(F.nama).trim()) return L.toast('Nama ujian wajib diisi.', 'warn');
-        if (!F.kelasId || !F.mapelId) return L.toast('Pilih kelas dan mata pelajaran.', 'warn');
-        if (Math.round(total()) !== 100) return L.toast('Total pembobotan harus tepat 100% (sekarang ' + L.num(total(), 1) + '%).', 'warn');
-        if (lanjut && !F.soal.length) return L.toast('Tambahkan minimal satu soal sebelum lanjut ke cetak.', 'warn');
-        const uj = Object.assign({}, F); delete uj.soal; if (self.id) uj.id = self.id;
+        const salah = cek(); if (salah) return L.toast(salah, 'warn');
+        const uj = {}; Object.keys(F).forEach(k => { if (k[0] !== '_' && ['kunci', 'opsiJumlah', 'soal'].indexOf(k) < 0) uj[k] = F[k]; }); if (self.id) uj.id = self.id;
         L.btnBusy(btn, true);
         try {
-          const r = await L.api('ujian.simpan', { ujian: uj, soal: F.soal.map(s => ({ soalId: s.soalId, bobot: Number(s.bobot) || 0 })) });
-          gabung(r); L.ls.del('ljk_draft_ujian'); self.id = r.ujian.id; L.toast(lanjut ? 'Ujian disimpan. Lanjut ke cetak LJK.' : 'Draf ujian disimpan.');
+          const r = await L.api('ujian.simpan', { ujian: uj, soal: [], kunci: muatan(), opsiJumlah: F.opsiJumlah });
+          gabung(r); L.ls.del('ljk_draft_ujian'); self.id = r.ujian.id;
+          if (r.nilaiUlang) { if (L.S.jw) delete L.S.jw[r.ujian.id]; await L.bootstrap(true); L.toast('Kunci disimpan. ' + r.nilaiUlang + ' lembar dinilai ulang otomatis.'); }
+          else L.toast(lanjut ? 'Ujian disimpan. Lanjut ke cetak LJK.' : 'Ujian & kunci jawaban disimpan.');
           location.hash = lanjut ? '#/cetak/' + encodeURIComponent(r.ujian.id) : '#/ujian';
         } catch (err) { L.btnBusy(btn, false); L.err(err); }
-      }
-      function pilihBank() {
-        const dipilih = new Set(F.soal.map(s => s.soalId)), pilih = new Set(); const fl = { mapel: F.mapelId, jenis: '', q: '' };
-        const m = L.modal({ title: ic('box') + ' Ambil soal dari Bank Soal', size: 'w-l', body: '<div class="fbar mb"><div class="search grow" style="max-width:none"><input class="in" id="bq" placeholder="Cari teks soal / topik…" style="padding-left:40px">' + ic('search') + '</div><select class="in" id="bm">' + L.opt(L.S.d.mapel, 'id', 'nama', fl.mapel, 'Semua mapel') + '</select><select class="in" id="bj"><option value="">Semua jenis</option><option value="PG">Pilihan Ganda</option><option value="ISIAN">Isian Singkat</option><option value="URAIAN">Uraian</option></select></div><div id="bl" style="max-height:52vh;overflow:auto"></div>', footer: '<span class="small muted grow" id="bc"></span><button class="btn" data-close>Batal</button><button class="btn pri" id="ok" disabled>Tambahkan</button>' });
-        const arr = () => { const q = fl.q.toLowerCase(); return L.S.d.bankSoal.filter(b => (!fl.mapel || b.mapelId === fl.mapel) && (!fl.jenis || b.jenis === fl.jenis) && (!q || (L.polos(b.teks) + ' ' + b.topik + ' ' + b.kode).toLowerCase().indexOf(q) >= 0)); };
-        const dr = () => {
-          const a = arr(); m.$('#bl').innerHTML = a.length ? '<table class="t"><tbody>' + a.map(b => { const sdh = dipilih.has(b.id); return '<tr class="' + (pilih.has(b.id) ? 'sel' : '') + '"><td style="width:40px"><input type="checkbox" class="ck" data-id="' + esc(b.id) + '"' + (sdh ? ' disabled checked' : '') + (pilih.has(b.id) ? ' checked' : '') + ' aria-label="Pilih soal"></td><td><div class="b">' + esc(L.potong(L.polos(b.teks), 100)) + '</div><div class="tiny faint mono">' + esc(b.kode) + ' • ' + esc(L.d.namaMapel(b.mapelId)) + (b.topik ? ' • ' + esc(b.topik) : '') + '</div></td><td><span class="badge ' + L.JENIS[b.jenis][2] + '">' + b.jenis + '</span></td><td class="mono b">' + L.num(b.bobot, 1) + '</td><td>' + (sdh ? '<span class="badge">sudah dipilih</span>' : ketKunci(b)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">Tidak ada soal yang cocok.</div>';
-          m.$('#bc').textContent = pilih.size + ' soal dipilih'; m.$('#ok').disabled = !pilih.size;
-        };
-        dr(); const deb = L.debounce(dr, 160);
-        m.$('#bq').oninput = e => { fl.q = e.target.value; deb(); }; m.$('#bm').onchange = e => { fl.mapel = e.target.value; dr(); }; m.$('#bj').onchange = e => { fl.jenis = e.target.value; dr(); };
-        m.$('#bl').onchange = e => { const id = e.target.dataset.id; if (!id) return; e.target.checked ? pilih.add(id) : pilih.delete(id); e.target.closest('tr').classList.toggle('sel', e.target.checked); m.$('#bc').textContent = pilih.size + ' soal dipilih'; m.$('#ok').disabled = !pilih.size; };
-        m.$('#ok').onclick = () => { L.S.d.bankSoal.filter(b => pilih.has(b.id)).forEach(b => F.soal.push({ soalId: b.id, bobot: b.bobot })); m.close(); drawSoal(); drawBobot(); simpanDraf(); L.toast(pilih.size + ' soal ditambahkan.'); };
       }
     }
   };

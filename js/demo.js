@@ -3,7 +3,7 @@
    tanpa Apps Script. AI-nya palsu: bacaan & nilai dibangkitkan acak-terarah. */
 (function () {
   'use strict';
-  const L = window.L, KEY = 'ljk_demo_v1';
+  const L = window.L, KEY = 'ljk_demo_v2';
   const gal = (code, msg) => { const e = new Error(msg); e.code = code; return e; };
   const iso = (d) => { d = d || new Date(); const p = n => ('0' + n).slice(-2); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); };
   const bulat = (n, d) => { const p = Math.pow(10, d == null ? 2 : d); return Math.round((Number(n) || 0) * p) / p; };
@@ -36,11 +36,11 @@
     const s = {
       pengguna: [
         { id: 'p1', email: 'admin@sekolah.sch.id', nama: 'Drs. Supriyanto, M.Pd.', peran: 'admin', kelasDiampu: [], mapel: 'Matematika', nip: '196812121994031004', aktif: true, dibuat: iso(), terakhirMasuk: iso() },
-        { id: 'p2', email: 'sri.wahyuni@sekolah.sch.id', nama: 'Hj. Sri Wahyuni, S.Pd.', peran: 'guru', kelasDiampu: ['k1', 'k2'], mapel: 'Biologi', nip: '198902142015032001', aktif: true, dibuat: iso(), terakhirMasuk: '' },
+        { id: 'p2', email: 'sri.wahyuni@sekolah.sch.id', nama: 'Hj. Sri Wahyuni, S.Pd.', peran: 'guru', kelasDiampu: ['k1', 'k2', 'k4', 'k5'], mapel: 'Biologi', nip: '198902142015032001', aktif: true, dibuat: iso(), terakhirMasuk: '' },
         { id: 'p3', email: 'ahmad.s@sekolah.sch.id', nama: 'Ahmad Syaifullah, S.Kom.', peran: 'guru', kelasDiampu: ['k3'], mapel: 'Fisika', nip: '199108192019021008', aktif: false, dibuat: iso(), terakhirMasuk: '' }
       ],
-      kelas: [{ id: 'k1', nama: 'X IPA 1', tingkat: 'X', jurusan: 'IPA', waliKelas: 'Hj. Sri Wahyuni, S.Pd.' }, { id: 'k2', nama: 'X IPA 2', tingkat: 'X', jurusan: 'IPA', waliKelas: '' }, { id: 'k3', nama: 'XI MIPA 2', tingkat: 'XI', jurusan: 'MIPA', waliKelas: '' }],
-      mapel: [{ id: 'm1', kode: 'MTK', nama: 'Matematika' }, { id: 'm2', kode: 'BIO', nama: 'Biologi' }, { id: 'm3', kode: 'BIN', nama: 'Bahasa Indonesia' }, { id: 'm4', kode: 'FIS', nama: 'Fisika' }, { id: 'm5', kode: 'KIM', nama: 'Kimia' }],
+      kelas: [{ id: 'k1', nama: 'X IPA 1', tingkat: 'X', jurusan: 'IPA', waliKelas: 'Hj. Sri Wahyuni, S.Pd.' }, { id: 'k2', nama: 'X IPA 2', tingkat: 'X', jurusan: 'IPA', waliKelas: '' }, { id: 'k3', nama: 'XI MIPA 2', tingkat: 'XI', jurusan: 'MIPA', waliKelas: '' }, { id: 'k4', nama: '4 A', tingkat: '4', jurusan: '', waliKelas: 'Bu Rina' }, { id: 'k5', nama: 'VIII A', tingkat: 'VIII', jurusan: '', waliKelas: '' }],
+      mapel: [{ id: 'm1', kode: 'MTK', nama: 'Matematika' }, { id: 'm2', kode: 'BIO', nama: 'Biologi' }, { id: 'm3', kode: 'BIN', nama: 'Bahasa Indonesia' }, { id: 'm4', kode: 'FIS', nama: 'Fisika' }, { id: 'm5', kode: 'KIM', nama: 'Kimia' }, { id: 'm6', kode: 'IPA', nama: 'IPA' }, { id: 'm7', kode: 'PKN', nama: 'PKN' }],
       siswa: [], bankSoal: [], ujian: [], soalUjian: [], ljk: [], jawaban: [], hasil: [], riwayat: [],
       set: null, aiKey: '', kuota: { hari: '', n: 0 }
     };
@@ -49,6 +49,8 @@
     ['Lintang Ayu Ningrum', 'Muhammad Rizky', 'Nadia Putri Utami', 'Oka Pratama'].forEach((n, i) => s.siswa.push({ id: 's' + (13 + i), nis: '2024' + (2001 + i), nisn: '00812346' + (10 + i), nama: n, kelasId: 'k2', aktif: 'Aktif' }));
     ['Putri Anjani', 'Qori Ramadhan', 'Rani Oktaviani'].forEach((n, i) => s.siswa.push({ id: 's' + (17 + i), nis: '2023' + (3001 + i), nisn: '00791234' + (10 + i), nama: n, kelasId: 'k3', aktif: i === 2 ? 'Nonaktif' : 'Aktif' }));
 
+    ['Adinda Putri', 'Bagas Pratama', 'Cantika Sari', 'Dafa Ramadhan'].forEach((n, i) => s.siswa.push({ id: 's' + (20 + i), nis: '2025' + (4001 + i), nisn: '01012345' + (10 + i), nama: n, kelasId: 'k4', aktif: 'Aktif' }));
+    ['Eko Prasetyo', 'Fitri Handayani', 'Galih Permana', 'Hana Safira'].forEach((n, i) => s.siswa.push({ id: 's' + (24 + i), nis: '2025' + (5001 + i), nisn: '01112345' + (10 + i), nama: n, kelasId: 'k5', aktif: 'Aktif' }));
     const pg = (id, kode, mapel, teks, ops, kunci, topik, kog) => ({ id, kode, mapelId: mapel, tingkat: 'X', jenis: 'PG', teks, kognitif: kog || 'C2', topik, bobot: 2, opsi: ops.map((o, i) => ({ key: 'ABCDE'[i], teks: o })), kunci, variasi: [], jawabanIdeal: '', rubrik: [], lampiranId: '', pemilik: 'admin@sekolah.sch.id', dibuat: iso() });
     const isi = (id, kode, mapel, teks, kunci, vari, topik) => ({ id, kode, mapelId: mapel, tingkat: 'X', jenis: 'ISIAN', teks, kognitif: 'C2', topik, bobot: 3, opsi: [], kunci, variasi: vari, jawabanIdeal: '', rubrik: [], lampiranId: '', pemilik: 'admin@sekolah.sch.id', dibuat: iso() });
     const ura = (id, kode, mapel, teks, ideal, rub, topik) => ({ id, kode, mapelId: mapel, tingkat: 'X', jenis: 'URAIAN', teks, kognitif: 'C4', topik, bobot: rub.reduce((t, a) => t + a.bobot, 0), opsi: [], kunci: '', variasi: [], jawabanIdeal: ideal, rubrik: rub, lampiranId: '', pemilik: 'admin@sekolah.sch.id', dibuat: iso() });
@@ -83,9 +85,36 @@
     paket('u2', ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10']);
     paket('u3', ['q1', 'q3', 'q5']);
     paket('u4', ['q15', 'q16']);
+    [['u6', 'UJ-2026-4-IPA01', 'PH 1 IPA - Makhluk Hidup', 'PH', 'k4', 'm6', '2026-11-27', [100, 0, 0], 'ABCDABCDAB'.split('').map(c => ({ jenis: 'PG', kunci: c }))],
+     ['u7', 'UJ-2026-VIII-PKN01', 'PTS PKN - Pancasila', 'PTS', 'k5', 'm7', '2026-11-29', [70, 30, 0], 'BADCABDCBA'.split('').map(c => ({ jenis: 'PG', kunci: c })).concat([{ jenis: 'ISIAN', kunci: 'gotong royong', variasi: ['gotong-royong'], bobot: 5 }, { jenis: 'ISIAN', kunci: 'musyawarah', variasi: [], bobot: 5 }])]
+    ].forEach(a => { const r = uj(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], true), kl = s.kelas.find(k => k.id === a[4]); s.ujian.push(r); const h = siapkanKunci([], r, kl, 'admin@sekolah.sch.id', a[8], null); s.bankSoal.push.apply(s.bankSoal, h.bank); h.soal.forEach(x => s.soalUjian.push({ id: 'su_' + a[0] + '_' + x.nomor, ujianId: a[0], nomor: x.nomor, soalId: x.soalId, bobot: x.bobot })); });
     s.set = klon(L.demoDefaults);
     s.set.tahunAjaran = '2026/2027';
     return s;
+  }
+
+  const TA = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10, XI:11, XII:12 };
+  function tingkatAngka(t) { t = String(t || '').trim().toUpperCase(); if (/^\d+$/.test(t)) return Math.min(12, Math.max(1, +t)); return TA[t] || 10; }
+  function opsiDefault(t) { const n = tingkatAngka(t); return n <= 3 ? 3 : n <= 9 ? 4 : 5; }
+  // Bangun baris BankSoal + SoalUjian dari kunci jawaban (mode kunci langsung)
+  function siapkanKunci(bankAda, rec, kelas, email, kunci, opsiJumlah) {
+    const oj = Math.min(5, Math.max(3, +opsiJumlah || opsiDefault(kelas.tingkat)));
+    const huruf = 'ABCDE'.slice(0, oj), pre = 'K-' + rec.kode + '-', bank = [], soal = [];
+    kunci.forEach((k, i) => {
+      const no = i + 1, kode = pre + ('0' + no).slice(-2), jenis = k.jenis;
+      if (['PG', 'ISIAN', 'URAIAN'].indexOf(jenis) < 0) throw gal('VALIDASI', 'Jenis soal nomor ' + no + ' tidak dikenal.');
+      const bobot = +k.bobot > 0 ? +k.bobot : (jenis === 'PG' ? 1 : jenis === 'ISIAN' ? 2 : 10);
+      const o = { id: '', kode, mapelId: rec.mapelId, tingkat: kelas.tingkat, jenis, teks: 'Soal nomor ' + no, kognitif: 'C2', topik: 'Kunci langsung', bobot, opsi: [], kunci: '', variasi: [], jawabanIdeal: '', rubrik: [], lampiranId: '', pemilik: email, dibuat: iso() };
+      if (jenis === 'PG') { const kk = String(k.kunci || '').toUpperCase(); if (huruf.indexOf(kk) < 0 || kk.length !== 1) throw gal('VALIDASI', 'Kunci nomor ' + no + ' harus salah satu dari ' + huruf.split('').join(', ') + '.'); o.opsi = huruf.split('').map(h => ({ key: h, teks: '' })); o.kunci = kk; }
+      else if (jenis === 'ISIAN') { if (!String(k.kunci || '').trim()) throw gal('VALIDASI', 'Kunci isian nomor ' + no + ' wajib diisi.'); o.kunci = String(k.kunci).trim(); o.variasi = (k.variasi || []).map(v => String(v).trim()).filter(Boolean); }
+      else { if (!String(k.jawabanIdeal || '').trim()) throw gal('VALIDASI', 'Jawaban acuan uraian nomor ' + no + ' wajib diisi.'); o.jawabanIdeal = String(k.jawabanIdeal).trim(); o.rubrik = (k.rubrik && k.rubrik.length) ? k.rubrik : [{ aspek: 'Kebenaran dan kelengkapan jawaban', bobot }]; o.bobot = o.rubrik.reduce((t, a) => t + (+a.bobot || 0), 0) || bobot; }
+      const lama = bankAda.find(b => b.kode === kode && b.jenis === jenis);
+      o.id = lama ? lama.id : 'q_' + Math.random().toString(36).slice(2, 9); if (lama) o.dibuat = lama.dibuat;
+      bank.push(o); soal.push({ nomor: no, soalId: o.id, bobot: o.bobot });
+    });
+    const keep = {}; bank.forEach(b => { keep[b.id] = 1; });
+    const hapus = bankAda.filter(b => b.kode.indexOf(pre) === 0 && !keep[b.id]).map(b => b.id);
+    return { bank, soal, hapus };
   }
   L.demoDefaults = {
     namaSekolah: 'SMA Negeri 1 Merdeka', tahunAjaran: '', semester: 'Ganjil', kkm: 70, ambangVerifikasi: 70, autoTerimaAktif: true, autoTerima: 90, tandaiGanda: true,
@@ -106,8 +135,8 @@
       const n = su.nomor;
       if (b.jenis === 'PG') {
         const x = R(); let a = b.kunci, conf = 80 + R() * 19;
-        if (x > 0.72) a = 'ABCDE'.replace(b.kunci, '')[Math.floor(R() * 4)];
-        if (x > 0.96) { a = ''; conf = 55 + R() * 10; } else if (x > 0.93) { a = b.kunci + ',' + 'ABCDE'.replace(b.kunci, '')[0]; conf = 50 + R() * 15; }
+        const HH = 'ABCDE'.slice(0, Math.max(3, b.opsi.length)).replace(b.kunci, ''); if (x > 0.72) a = HH[Math.floor(R() * HH.length)];
+        if (x > 0.96) { a = ''; conf = 55 + R() * 10; } else if (x > 0.93) { a = b.kunci + ',' + HH[0]; conf = 50 + R() * 15; }
         out.pg[n] = { no: n, answer: a, confidence: Math.round(conf) };
       } else if (b.jenis === 'ISIAN') {
         const x = R(); let tx = b.kunci, conf = 78 + R() * 20;
@@ -187,6 +216,23 @@
     const h = { id: uj.id + '_' + ljk.siswaId, ujianId: uj.id, siswaId: ljk.siswaId, nilaiPG: n.PG, nilaiIsian: n.ISIAN, nilaiUraian: n.URAIAN, nilaiAkhir: n.akhir, status: st, diperbarui: iso() };
     const hi = db.hasil.findIndex(x => x.id === h.id); if (hi >= 0) db.hasil[hi] = h; else db.hasil.push(h);
     return { ljk: pub(rec), hasil: h, jumlahPerlu: perlu };
+  }
+  // Koreksi ulang otomatis setelah kunci/skor diperbaiki (hanya PG yang dihitung ulang tanpa AI)
+  function nilaiUlangDemo(uj) {
+    const soal = soalLengkap(uj.id), su = soal.map(x => x.su); let n = 0;
+    db.ljk.filter(l => l.ujianId === uj.id).forEach(l => {
+      const rows = db.jawaban.filter(j => j.ljkId === l.id); if (!rows.length) return;
+      rows.forEach(r => {
+        const x = soal.find(y => y.bank.id === r.soalId) || soal.find(y => y.su.nomor === r.nomor); if (!x) return;
+        const lamaMaks = r.skorMaks || 1, baru = x.su.bobot; r.soalId = x.bank.id;
+        const kunci = r.status === 'Diubah Guru' || r.status === 'Terverifikasi';
+        if (x.bank.jenis === 'PG' && !kunci) { const a = String(r.jawabanTerbaca || '').toUpperCase(); r.skor = a && a.indexOf(',') < 0 && a === x.bank.kunci ? baru : 0; r.alasan = !a ? 'Tidak dijawab' : a.indexOf(',') >= 0 ? r.alasan : a === x.bank.kunci ? 'Sesuai kunci (' + x.bank.kunci + ')' : 'Jawaban ' + a + ', kunci ' + x.bank.kunci; }
+        else if (baru !== lamaMaks) r.skor = bulat(r.skor / lamaMaks * baru, 2);
+        r.skorMaks = baru;
+      });
+      simpanRingkasan(l, uj, su, rows, db.set, null); n++;
+    });
+    return n;
   }
   const pub = l => { const o = Object.assign({}, l); o.adaFile = !!(l.fileId && gambarMem[l.fileId]); delete o.fileId; return o; };
   function prosesLJK(ljkId, tanpaKuota) {
@@ -285,14 +331,26 @@
       if (Math.round((+x.bobotPG || 0) + (+x.bobotIsian || 0) + (+x.bobotUraian || 0)) !== 100) throw gal('VALIDASI', 'Total pembobotan harus tepat 100%.');
       const lama = x.id ? db.ujian.find(e => e.id === x.id) : null; if (lama && !boleh(u, lama)) throw gal('FORBIDDEN', 'Anda tidak memiliki akses ke ujian ini.');
       const ada = lama ? db.ljk.some(l => l.ujianId === lama.id) : false;
-      if (ada) { const ls = db.soalUjian.filter(s => s.ujianId === lama.id); if (!(ls.length === ds.length && ls.every((s, i) => s.soalId === ds[i].soalId))) throw gal('VALIDASI', 'Daftar soal tidak dapat diubah karena LJK sudah dipindai. Hapus data LJK ujian ini terlebih dahulu.'); }
       const kl = db.kelas.find(k => k.id === x.kelasId), mp = db.mapel.find(m => m.id === x.mapelId);
+      const modeKunci = Array.isArray(d.kunci);
+      if (modeKunci) { if (!d.kunci.length) throw gal('VALIDASI', 'Isi minimal satu kunci jawaban.'); if (d.kunci.length > 200) throw gal('VALIDASI', 'Maksimal 200 soal per ujian.'); }
+      if (ada && !modeKunci) { const ls = db.soalUjian.filter(s => s.ujianId === lama.id); if (!(ls.length === ds.length && ls.every((s, i) => s.soalId === ds[i].soalId))) throw gal('VALIDASI', 'Daftar soal tidak dapat diubah karena LJK sudah dipindai. Hapus data LJK ujian ini terlebih dahulu.'); }
+      if (ada && modeKunci) { const ls = db.soalUjian.filter(s => s.ujianId === lama.id).sort((a, b) => a.nomor - b.nomor); const jn = ls.map(s => (db.bankSoal.find(b => b.id === s.soalId) || {}).jenis); if (!(ls.length === d.kunci.length && jn.every((j, i) => j === d.kunci[i].jenis))) throw gal('VALIDASI', 'Jumlah/jenis soal tidak dapat diubah karena LJK sudah dipindai. Kunci dan skor masih boleh dikoreksi.'); }
       const rec = { id: lama ? lama.id : 'UJ-' + Math.random().toString(36).slice(2, 9), kode: lama ? lama.kode : '', nama: x.nama.trim(), jenis: x.jenis || 'PH', kelasId: x.kelasId, mapelId: x.mapelId, tanggal: x.tanggal || '', durasi: +x.durasi || 90, instruksi: String(x.instruksi || '').trim(), bobotPG: +x.bobotPG, bobotIsian: +x.bobotIsian, bobotUraian: +x.bobotUraian, dicetak: lama ? lama.dicetak : false, pemilik: lama ? lama.pemilik : u.email, dibuat: lama ? lama.dibuat : iso() };
       if (!rec.kode) { const aw = 'UJ-' + (rec.tanggal || iso()).slice(0, 4) + '-' + (kl.tingkat || 'X') + '-' + mp.kode; rec.kode = aw + ('0' + (db.ujian.filter(e => e.kode.indexOf(aw) === 0).length + 1)).slice(-2); }
-      const baris = ds.map((s, i) => { const b = db.bankSoal.find(q => q.id === s.soalId); if (!b) throw gal('VALIDASI', 'Soal nomor ' + (i + 1) + ' tidak ditemukan di bank soal.'); return { id: 'su_' + Math.random().toString(36).slice(2, 9), ujianId: rec.id, nomor: i + 1, soalId: s.soalId, bobot: +s.bobot > 0 ? +s.bobot : b.bobot }; });
+      let baris, bankBaru = [], hapusBank = [], nilaiUlang = 0;
+      if (modeKunci) {
+        const h = siapkanKunci(db.bankSoal, rec, kl, u.email, d.kunci, d.opsiJumlah); bankBaru = h.bank; hapusBank = h.hapus;
+        baris = h.soal.map(x => ({ id: 'su_' + Math.random().toString(36).slice(2, 9), ujianId: rec.id, nomor: x.nomor, soalId: x.soalId, bobot: x.bobot }));
+        bankBaru.forEach(b => { const j = db.bankSoal.findIndex(q => q.id === b.id); if (j >= 0) db.bankSoal[j] = b; else db.bankSoal.push(b); });
+      } else {
+        baris = ds.map((s, i) => { const b = db.bankSoal.find(q => q.id === s.soalId); if (!b) throw gal('VALIDASI', 'Soal nomor ' + (i + 1) + ' tidak ditemukan di bank soal.'); return { id: 'su_' + Math.random().toString(36).slice(2, 9), ujianId: rec.id, nomor: i + 1, soalId: s.soalId, bobot: +s.bobot > 0 ? +s.bobot : b.bobot }; });
+      }
       const i = db.ujian.findIndex(e => e.id === rec.id); if (i >= 0) db.ujian[i] = rec; else db.ujian.push(rec);
       if (!ada) { db.soalUjian = db.soalUjian.filter(s => s.ujianId !== rec.id).concat(baris); }
-      return klon({ ujian: rec, soalUjian: ada ? db.soalUjian.filter(s => s.ujianId === rec.id) : baris });
+      else if (modeKunci) { db.soalUjian.filter(s => s.ujianId === rec.id).forEach(s => { const b = baris.find(r => r.nomor === s.nomor); if (b) { s.bobot = b.bobot; s.soalId = b.soalId; } }); nilaiUlang = nilaiUlangDemo(rec); }
+      if (hapusBank.length) db.bankSoal = db.bankSoal.filter(b => hapusBank.indexOf(b.id) < 0);
+      return klon({ ujian: rec, soalUjian: ada ? db.soalUjian.filter(s => s.ujianId === rec.id) : baris, bankSoal: bankBaru, nilaiUlang });
     },
     'ujian.dicetak'(d, u) { const uj = ambilUjian(d.id, u); if (!db.soalUjian.some(s => s.ujianId === uj.id)) throw gal('VALIDASI', 'Ujian belum memiliki soal.'); uj.dicetak = true; return { id: uj.id, dicetak: true }; },
     'ujian.hapus'(d, u) {
