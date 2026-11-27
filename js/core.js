@@ -102,8 +102,8 @@
   L.tingkatAngka = t => { t = String(t == null ? '' : t).trim().toUpperCase(); if (/^\d+$/.test(t)) return Math.min(12, Math.max(1, +t)); return ROMAWI[t] || 10; };
   L.opsiDefault = t => { const n = L.tingkatAngka(t); return n <= 3 ? 3 : n <= 9 ? 4 : 5; };
   L.jenjang = t => { const n = L.tingkatAngka(t); return { n, nama: n <= 6 ? 'SD' : n <= 9 ? 'SMP' : 'SMA', opsi: L.opsiDefault(t) }; };
-  // Paksa setiap LJK muat satu halaman A4: bila isi lebih tinggi dari lembar, perkecil otomatis (min 55%)
-  // Pastikan SETIAP LJK muat tepat satu halaman A4: coba tata letak normal -> rapat -> sangat rapat, baru perkecil skala.
+  // Paksa setiap LJK muat satu halaman F4 (215 x 330 mm): bila isi lebih tinggi dari lembar, perkecil otomatis (min 55%)
+  // Pastikan SETIAP LJK muat tepat satu halaman F4: coba tata letak normal -> rapat -> sangat rapat, baru perkecil skala.
   L.fitSheets = root => {
     (root || document).querySelectorAll('.sheet').forEach(sh => {
       const inn = sh.querySelector('.in'); if (!inn) return;
@@ -193,7 +193,7 @@
   /** Cetak area kustom (PDF lewat dialog cetak peramban). */
   L.cetak = (html, cls) => {
     const a = L.$('#print-area'); a.className = cls || ''; a.innerHTML = html;
-    a.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:210mm'; L.fitSheets(a); a.style.cssText = '';
+    a.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:215mm'; L.fitSheets(a); a.style.cssText = '';
     setTimeout(() => { window.print(); }, 150);
   };
 

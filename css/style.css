@@ -270,7 +270,7 @@ a.kpi{color:inherit}
 
 /* ===== Cetak LJK ===== */
 .sheetwrap{background:var(--line);border-radius:var(--r);padding:12px;overflow:auto;max-height:78vh}
-.sheet{width:210mm;height:297mm;overflow:hidden;background:#fff;color:#000;padding:12mm 12mm 10mm;margin:0 auto 12px;position:relative;font-family:Arial,Helvetica,sans-serif;font-size:10pt;box-shadow:0 8px 30px rgba(0,0,0,.18);transform-origin:top left}
+.sheet{width:215mm;height:330mm;overflow:hidden;background:#fff;color:#000;padding:12mm 12mm 10mm;margin:0 auto 12px;position:relative;font-family:Arial,Helvetica,sans-serif;font-size:10pt;box-shadow:0 8px 30px rgba(0,0,0,.18);transform-origin:top left}
 .sheet *{box-sizing:border-box}
 .sheet .fid{position:absolute;width:7mm;height:7mm;background:#000}
 .sheet .fid.tl{top:4mm;left:4mm}.sheet .fid.tr{top:4mm;right:4mm}.sheet .fid.bl{bottom:4mm;left:4mm}.sheet .fid.br{bottom:4mm;right:4mm}
@@ -295,7 +295,7 @@ a.kpi{color:inherit}
 .rapor{width:190mm;margin:0 auto;font-family:Arial,sans-serif;color:#000;font-size:10.5pt}
 .rapor h2{font-size:14pt;margin-bottom:2mm}.rapor table{width:100%;border-collapse:collapse;margin:3mm 0}.rapor th,.rapor td{border:1px solid #444;padding:1.5mm 2mm;text-align:left;font-size:9.5pt}.rapor th{background:#eee}
 @media print{
-  @page{size:A4;margin:0}
+  @page{size:215mm 330mm;margin:0}
   body{background:#fff!important}
   #app,.toasts,.mbg{display:none!important}
   #print-area{display:block!important}
@@ -361,10 +361,10 @@ a.kpi{color:inherit}
 .sheet .pgcols.c3 .pgr,.sheet .pgcols.c4 .pgr{height:5.6mm;font-size:8pt}.sheet .pgcols.c4 .bub{width:4.2mm;height:4.2mm;line-height:3.4mm;font-size:5.5pt;margin-left:1mm}.sheet .pgcols.c4 .pgr b{width:6mm}
 .sheet .isg.two{display:grid;grid-template-columns:1fr 1fr;gap:0 6mm}
 .sheet .in{display:block}
-@media print{#print-area .sheet{height:296.5mm;overflow:hidden}}
+@media print{#print-area .sheet{height:329.5mm;overflow:hidden}}
 @media print{#print-area .sheet:last-child{break-after:auto;page-break-after:auto}}
 
-/* LJK rapat: agar tetap satu lembar A4 untuk soal banyak */
+/* LJK rapat: agar tetap satu lembar F4 untuk soal banyak */
 .sheet.cmp .pgr{height:5.2mm}.sheet.cmp h4{margin:2.5mm 0 1.2mm}.sheet.cmp .idbox{padding:1.5mm;margin-bottom:2.5mm}.sheet.cmp .idbox .qr{width:20mm;height:20mm}.sheet.cmp .idbox td{padding:.4mm 0}
 .sheet.cmp .isr{margin-bottom:1mm}.sheet.cmp .isr .ln{height:6mm}.sheet.cmp .ur{margin-bottom:2mm;padding:1.2mm 2.5mm}.sheet.cmp .ur .ln{height:5mm}.sheet.cmp .hd{padding-bottom:1.5mm;margin-bottom:2mm}
 .sheet.cmp2 .pgr{height:4.6mm}.sheet.cmp2 h4{margin:1.8mm 0 1mm}.sheet.cmp2 .idbox{padding:1mm;margin-bottom:1.5mm}.sheet.cmp2 .idbox .qr{width:17mm;height:17mm}.sheet.cmp2 .idbox td{padding:0}
