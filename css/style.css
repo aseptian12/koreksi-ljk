@@ -270,7 +270,7 @@ a.kpi{color:inherit}
 
 /* ===== Cetak LJK ===== */
 .sheetwrap{background:var(--line);border-radius:var(--r);padding:12px;overflow:auto;max-height:78vh}
-.sheet{width:210mm;min-height:297mm;background:#fff;color:#000;padding:12mm 12mm 10mm;margin:0 auto 12px;position:relative;font-family:Arial,Helvetica,sans-serif;font-size:10pt;box-shadow:0 8px 30px rgba(0,0,0,.18);transform-origin:top left}
+.sheet{width:210mm;height:297mm;overflow:hidden;background:#fff;color:#000;padding:12mm 12mm 10mm;margin:0 auto 12px;position:relative;font-family:Arial,Helvetica,sans-serif;font-size:10pt;box-shadow:0 8px 30px rgba(0,0,0,.18);transform-origin:top left}
 .sheet *{box-sizing:border-box}
 .sheet .fid{position:absolute;width:7mm;height:7mm;background:#000}
 .sheet .fid.tl{top:4mm;left:4mm}.sheet .fid.tr{top:4mm;right:4mm}.sheet .fid.bl{bottom:4mm;left:4mm}.sheet .fid.br{bottom:4mm;right:4mm}
@@ -355,3 +355,17 @@ a.kpi{color:inherit}
 .sk{display:block;height:18px;border-radius:10px;background:linear-gradient(90deg,var(--card2) 25%,var(--line) 45%,var(--card2) 65%);background-size:200% 100%;animation:skm 1.1s linear infinite;margin-bottom:10px}
 @keyframes skm{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.sk{animation:none}}
+
+/* LJK satu lembar: kolom PG & isian adaptif */
+.sheet .pgcols.c3{grid-template-columns:repeat(3,1fr);gap:0 5mm}.sheet .pgcols.c4{grid-template-columns:repeat(4,1fr);gap:0 3mm}
+.sheet .pgcols.c3 .pgr,.sheet .pgcols.c4 .pgr{height:5.6mm;font-size:8pt}.sheet .pgcols.c4 .bub{width:4.2mm;height:4.2mm;line-height:3.4mm;font-size:5.5pt;margin-left:1mm}.sheet .pgcols.c4 .pgr b{width:6mm}
+.sheet .isg.two{display:grid;grid-template-columns:1fr 1fr;gap:0 6mm}
+.sheet .in{display:block}
+@media print{#print-area .sheet{height:296.5mm;overflow:hidden}}
+@media print{#print-area .sheet:last-child{break-after:auto;page-break-after:auto}}
+
+/* LJK rapat: agar tetap satu lembar A4 untuk soal banyak */
+.sheet.cmp .pgr{height:5.2mm}.sheet.cmp h4{margin:2.5mm 0 1.2mm}.sheet.cmp .idbox{padding:1.5mm;margin-bottom:2.5mm}.sheet.cmp .idbox .qr{width:20mm;height:20mm}.sheet.cmp .idbox td{padding:.4mm 0}
+.sheet.cmp .isr{margin-bottom:1mm}.sheet.cmp .isr .ln{height:6mm}.sheet.cmp .ur{margin-bottom:2mm;padding:1.2mm 2.5mm}.sheet.cmp .ur .ln{height:5mm}.sheet.cmp .hd{padding-bottom:1.5mm;margin-bottom:2mm}
+.sheet.cmp2 .pgr{height:4.6mm}.sheet.cmp2 h4{margin:1.8mm 0 1mm}.sheet.cmp2 .idbox{padding:1mm;margin-bottom:1.5mm}.sheet.cmp2 .idbox .qr{width:17mm;height:17mm}.sheet.cmp2 .idbox td{padding:0}
+.sheet.cmp2 .isr{margin-bottom:.6mm}.sheet.cmp2 .isr .ln{height:5mm}.sheet.cmp2 .ur{margin-bottom:1.2mm;padding:1mm 2mm}.sheet.cmp2 .ur .ln{height:4mm}.sheet.cmp2 .ft{margin-top:1.5mm}

@@ -102,6 +102,21 @@
   L.tingkatAngka = t => { t = String(t == null ? '' : t).trim().toUpperCase(); if (/^\d+$/.test(t)) return Math.min(12, Math.max(1, +t)); return ROMAWI[t] || 10; };
   L.opsiDefault = t => { const n = L.tingkatAngka(t); return n <= 3 ? 3 : n <= 9 ? 4 : 5; };
   L.jenjang = t => { const n = L.tingkatAngka(t); return { n, nama: n <= 6 ? 'SD' : n <= 9 ? 'SMP' : 'SMA', opsi: L.opsiDefault(t) }; };
+  // Paksa setiap LJK muat satu halaman A4: bila isi lebih tinggi dari lembar, perkecil otomatis (min 55%)
+  // Pastikan SETIAP LJK muat tepat satu halaman A4: coba tata letak normal -> rapat -> sangat rapat, baru perkecil skala.
+  L.fitSheets = root => {
+    (root || document).querySelectorAll('.sheet').forEach(sh => {
+      const inn = sh.querySelector('.in'); if (!inn) return;
+      const cs = getComputedStyle(sh), avail = sh.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let skala = 1, lv = '';
+      ['', 'cmp', 'cmp2'].some(k => {
+        sh.classList.remove('cmp', 'cmp2'); if (k) sh.classList.add(k); inn.style.zoom = ''; lv = k;
+        const need = inn.scrollHeight; skala = need > avail ? avail / need * 0.985 : 1; return skala >= 0.8;
+      });
+      if (skala < 1) inn.style.zoom = Math.max(0.45, skala).toFixed(3);
+      sh.dataset.fit = inn.style.zoom || '1'; sh.dataset.lv = lv; sh.dataset.muat = skala >= 0.6 ? '1' : '0';
+    });
+  };
   L.ic = (n, size) => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"' + (size ? ' style="width:' + size + 'px;height:' + size + 'px"' : '') + '>' + (P[n] || P.info) + '</svg>';
 
   /* ---------- Toast ---------- */
@@ -178,6 +193,7 @@
   /** Cetak area kustom (PDF lewat dialog cetak peramban). */
   L.cetak = (html, cls) => {
     const a = L.$('#print-area'); a.className = cls || ''; a.innerHTML = html;
+    a.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:210mm'; L.fitSheets(a); a.style.cssText = '';
     setTimeout(() => { window.print(); }, 150);
   };
 

@@ -113,6 +113,8 @@ Jika tampilan lama masih muncul: Ctrl+Shift+R.
 3. Frontend: ekstrak ZIP baru, salin isinya menimpa folder repo lama, **pertahankan `js/config.js` lama Anda**, lalu dari folder itu: `git add .` → `git commit -m "Versi 2.0"` → `git push`. Tekan Ctrl+Shift+R di peramban.
 4. Contoh kelas SD/SMP hanya ada di mode demo; di backend sungguhan tambahkan kelas sendiri lewat Master Data (pilih Tingkat 1–12).
 
+**Pembaruan cetak LJK (v2.1):** setiap siswa dijamin satu lembar A4. Bila soal banyak, tata letak dirapatkan otomatis lalu skala diperkecil; pratinjau menampilkan "1 lembar A4 (skala …%)" atau peringatan bila terlalu padat (sekitar >100 PG + banyak uraian). Hanya frontend yang berubah — cukup `git push` ulang, backend tidak perlu di-deploy ulang.
+
 ## Troubleshooting
 | Gejala | Solusi |
 |---|---|
