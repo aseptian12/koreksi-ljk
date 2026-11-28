@@ -6,5 +6,5 @@
    ============================================================ */
 window.APP_CONFIG = {
   GAS_URL: 'https://script.google.com/macros/s/AKfycbxUdCJWhjWo6Z7n_FG2_EvZI3MpJCovE4K8YLofGc93PYtV2MDSjbr6yGw6hVVsI3pcZg/exec',            // contoh: 'https://script.google.com/macros/s/AKfycbxUdCJWhjWo6Z7n_FG2_EvZI3MpJCovE4K8YLofGc93PYtV2MDSjbr6yGw6hVVsI3pcZg/exec'
-  GOOGLE_CLIENT_ID: '703278059733-eqonc8jrpjfgilhsqka9jsocc08bhb1u.apps.googleusercontent.com'    // contoh: '703278059733-eqonc8jrpjfgilhsqka9jsocc08bhb1u.apps.googleusercontent.com'
+  GOOGLE_CLIENT_ID: '269621444772-jalpbit6rvi2q3ni8oiog0cpe9aa9mrl.apps.googleusercontent.com'    // contoh: '703278059733-eqonc8jrpjfgilhsqka9jsocc08bhb1u.apps.googleusercontent.com'
 };
